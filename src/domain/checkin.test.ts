@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   earnsSuper,
   dayOf,
+  formatTime,
+  formatWhen,
   validateNewCheckin,
   type Checkin,
   type CheckinStatus,
@@ -116,5 +118,41 @@ describe("earnsSuper", () => {
   it("super de outro dia não bloqueia", () => {
     const list = [...base, checkin("super", "approved", { day: "2026-09-24" })];
     expect(earnsSuper(list, "u1", DAY)).toBe(true);
+  });
+});
+
+describe("formatTime", () => {
+  it("formata hora e minuto como 12h50 no fuso local", () => {
+    expect(formatTime(new Date("2026-09-25T15:50:00Z"))).toBe("12h50");
+  });
+
+  it("mantém dois dígitos e usa 00h à meia-noite", () => {
+    expect(formatTime(new Date("2026-09-25T03:05:00Z"))).toBe("00h05");
+  });
+});
+
+describe("formatWhen", () => {
+  const now = new Date("2026-09-25T15:00:00Z"); // 25/09 12h00 em São Paulo
+
+  it("hoje", () => {
+    expect(formatWhen(new Date("2026-09-25T15:50:00Z"), now)).toBe("Hoje 12h50");
+  });
+
+  it("ontem", () => {
+    expect(formatWhen(new Date("2026-09-24T14:25:00Z"), now)).toBe("Ontem 11h25");
+  });
+
+  it("dias anteriores", () => {
+    expect(formatWhen(new Date("2026-09-01T12:15:00Z"), now)).toBe("01/09 09h15");
+  });
+
+  it("compara o dia no fuso local, não em UTC", () => {
+    // 02:00 UTC de 26/09 ainda é 25/09 em São Paulo
+    expect(formatWhen(new Date("2026-09-26T02:00:00Z"), now)).toBe("Hoje 23h00");
+  });
+
+  it("ontem atravessa a virada de mês", () => {
+    const first = new Date("2026-10-01T15:00:00Z");
+    expect(formatWhen(new Date("2026-09-30T15:00:00Z"), first)).toBe("Ontem 12h00");
   });
 });

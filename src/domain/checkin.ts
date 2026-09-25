@@ -68,3 +68,38 @@ export function earnsSuper(
   );
   return BASE_TYPES.every((t) => approved.has(t));
 }
+
+/** Hora do dia no formato `12h50`, no fuso informado. */
+export function formatTime(instant: Date, timeZone = DEFAULT_TIME_ZONE): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  })
+    .format(instant)
+    .replace(":", "h");
+}
+
+function previousDay(day: Day): Day {
+  const date = new Date(`${day}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
+/** `Hoje 12h50`, `Ontem 11h25` ou, para dias anteriores, `01/09 09h15`. */
+export function formatWhen(
+  instant: Date,
+  now: Date,
+  timeZone = DEFAULT_TIME_ZONE,
+): string {
+  const day = dayOf(instant, timeZone);
+  const today = dayOf(now, timeZone);
+  const time = formatTime(instant, timeZone);
+
+  if (day === today) return `Hoje ${time}`;
+  if (day === previousDay(today)) return `Ontem ${time}`;
+
+  const [, month, dayOfMonth] = day.split("-");
+  return `${dayOfMonth}/${month} ${time}`;
+}

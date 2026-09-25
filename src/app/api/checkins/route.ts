@@ -5,7 +5,7 @@ import { createCheckin } from "@/features/checkin/create-checkin";
 
 // Funções da Vercel aceitam body de até 4.5MB (total, somando todas as fotos)
 const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
-const MAX_PHOTOS = 5;
+const MAX_PHOTOS = 20;
 const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const formSchema = z.object({

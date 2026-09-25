@@ -22,7 +22,7 @@ table tb_checkin
 . created_at
 
 table tb_checkin_picture
-. raw: base64
+. photo_url
 . check_id: fk tb_checkin.id
 . created_at
 
