@@ -8,7 +8,7 @@ export default function Home() {
 
   const fetchValue = async () => {
     try {
-      const res = await fetch('/api/increment');
+      const res = await fetch('/api/counter');
       const data = await res.json();
       setValue(data.value);
     } catch (error) {
@@ -29,11 +29,11 @@ export default function Home() {
     }
   };
 
-  // useEffect(() => {
-  //   fetchValue();
-  //   const interval = setInterval(fetchValue, 2000);
-  //   return () => clearInterval(interval);
-  // }, []);
+  useEffect(() => {
+    fetchValue();
+    const interval = setInterval(fetchValue, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50 dark:bg-black">
