@@ -29,11 +29,11 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    fetchValue();
-    const interval = setInterval(fetchValue, 2000);
-    return () => clearInterval(interval);
-  }, []);
+  // useEffect(() => {
+  //   fetchValue();
+  //   const interval = setInterval(fetchValue, 2000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50 dark:bg-black">
