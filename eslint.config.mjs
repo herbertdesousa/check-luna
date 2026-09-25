@@ -13,6 +13,17 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    // domain/ é TS puro: sem framework, banco ou camadas externas.
+    files: ["src/domain/**"],
+    ignores: ["src/domain/**/*.test.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        { patterns: ["next", "next/*", "react", "react-dom", "drizzle-orm*", "postgres", "@/*"] },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;
