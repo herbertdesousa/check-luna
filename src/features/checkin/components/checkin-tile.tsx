@@ -1,22 +1,7 @@
-import {
-  IconAvocado,
-  IconBarbell,
-  IconCircleDashedX,
-  IconClock,
-  IconDroplet,
-  IconRun,
-  type Icon,
-} from "@tabler/icons-react";
-import { formatWhen, type CheckinStatus, type CheckinType } from "@/domain/checkin";
+import { IconCircleDashedX, IconClock, type Icon } from "@tabler/icons-react";
+import { formatWhen, type CheckinStatus } from "@/domain/checkin";
 import type { FeedItem } from "../list-checkins";
-
-// `super` ainda não tem ícone definido
-const TYPE_ICON: Partial<Record<CheckinType, Icon>> = {
-  food: IconAvocado,
-  cardio: IconRun,
-  gym: IconBarbell,
-  water: IconDroplet,
-};
+import { TYPE_ICON } from "./type-icons";
 
 // aprovado não mostra ícone
 const STATUS_ICON: Partial<Record<CheckinStatus, Icon>> = {

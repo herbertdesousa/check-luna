@@ -11,7 +11,7 @@ export const CHECKIN_STATUSES = ["review", "approved", "denied"] as const;
 export type CheckinStatus = (typeof CHECKIN_STATUSES)[number];
 
 /** Tipos que o usuário posta; o `super` é concedido, nunca postado. */
-const BASE_TYPES = ["water", "food", "gym", "cardio"] as const;
+export const BASE_TYPES = ["water", "food", "gym", "cardio"] as const;
 
 export const DEFAULT_TIME_ZONE = "America/Sao_Paulo";
 
