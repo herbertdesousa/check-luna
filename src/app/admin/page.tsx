@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { Button } from "@/components/ui/button";
 import { formatWhen } from "@/domain/checkin";
 import { reviewCheckinAction } from "@/features/checkin/actions";
@@ -5,6 +6,7 @@ import { listPending } from "@/features/checkin/list-checkins";
 
 // ⚠️ Sem autenticação: tela provisória só para testar o fluxo de aprovação.
 export default async function AdminPage() {
+  await connection(); // depende do banco e da hora: nunca pré-renderizar no build
   const pending = await listPending();
   const now = new Date();
 

@@ -3,9 +3,15 @@ import { del, put } from "@vercel/blob";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { checkinPictures, checkins } from "@/db/schema";
-import { dayOf, validateNewCheckin, type CheckinError, type CheckinType } from "@/domain/checkin";
+import {
+  dayOf,
+  validateNewCheckin,
+  validateTakenAt,
+  type CheckinError,
+  type CheckinType,
+} from "@/domain/checkin";
 
-type Input = { userId: string; type: CheckinType; photos: File[] };
+type Input = { userId: string; type: CheckinType; photos: File[]; takenAt: Date };
 
 export type CreateCheckinResult =
   | {
@@ -19,7 +25,10 @@ export type CreateCheckinResult =
 const UNIQUE_VIOLATION = "23505";
 
 export async function createCheckin(input: Input): Promise<CreateCheckinResult> {
-  const day = dayOf(new Date());
+  const dateError = validateTakenAt(input.takenAt, new Date());
+  if (dateError) return { ok: false, error: dateError };
+
+  const day = dayOf(input.takenAt);
   const next = { userId: input.userId, type: input.type, day };
 
   const existing = await db
@@ -46,7 +55,10 @@ export async function createCheckin(input: Input): Promise<CreateCheckinResult> 
 
   try {
     const checkin = await db.transaction(async (tx) => {
-      const [row] = await tx.insert(checkins).values(next).returning();
+      const [row] = await tx
+        .insert(checkins)
+        .values({ ...next, createdAt: input.takenAt })
+        .returning();
       const photos = await tx
         .insert(checkinPictures)
         .values(uploaded.map((photoUrl) => ({ checkinId: row.id, photoUrl })))

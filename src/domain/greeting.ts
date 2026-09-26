@@ -34,3 +34,12 @@ export function pickGreeting(
 ): string {
   return candidates[Math.floor(random() * candidates.length)];
 }
+
+const NEW_CHECKIN = ["Novo check in???", "Mais um???"];
+
+/** Títulos da tela de novo check-in; tarde 12h–17h59, noite a partir das 18h. */
+export function newCheckinTitles(hour: number): string[] {
+  if (hour >= 18) return [...NEW_CHECKIN, "Essa hora da noite?!"];
+  if (hour >= 12) return [...NEW_CHECKIN, "Essa hora da tarde"];
+  return NEW_CHECKIN;
+}

@@ -11,6 +11,8 @@ const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const formSchema = z.object({
   userId: z.string().min(1),
   type: z.enum(CHECKIN_TYPES),
+  // instante ISO com offset; sem ele, vale "agora"
+  takenAt: z.iso.datetime({ offset: true }).optional(),
   photos: z
     .array(
       z
@@ -27,13 +29,18 @@ export async function POST(request: Request) {
   const body = formSchema.safeParse(form && {
       userId: form.get("userId"),
       type: form.get("type"),
+      takenAt: form.get("takenAt") ?? undefined,
       photos: form.getAll("photos"),
     });
   if (!body.success) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
 
-  const result = await createCheckin(body.data);
+  const { takenAt, ...input } = body.data;
+  const result = await createCheckin({
+    ...input,
+    takenAt: takenAt ? new Date(takenAt) : new Date(),
+  });
   if (!result.ok) {
     const status = result.error === "already_checked_in" ? 409 : 422;
     return NextResponse.json({ error: result.error }, { status });

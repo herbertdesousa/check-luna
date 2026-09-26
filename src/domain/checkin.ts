@@ -27,7 +27,16 @@ export type Checkin = {
 
 export type NewCheckin = Pick<Checkin, "userId" | "type" | "day">;
 
-export type CheckinError = "super_not_allowed" | "already_checked_in";
+export type CheckinError =
+  | "super_not_allowed"
+  | "already_checked_in"
+  | "in_future"
+  | "too_old";
+
+/** Até quantos dias atrás é possível registrar um check-in. */
+export const MAX_BACKDATE_DAYS = 7;
+/** Tolerância para relógio do cliente adiantado em relação ao servidor. */
+const CLOCK_SKEW_MS = 5 * 60 * 1000;
 
 export function dayOf(instant: Date, timeZone = DEFAULT_TIME_ZONE): Day {
   return new Intl.DateTimeFormat("en-CA", { timeZone }).format(instant);
@@ -81,10 +90,31 @@ export function formatTime(instant: Date, timeZone = DEFAULT_TIME_ZONE): string 
     .replace(":", "h");
 }
 
-function previousDay(day: Day): Day {
+/** Dia civil deslocado em `days` (negativo = para trás). */
+export function shiftDay(day: Day, days: number): Day {
   const date = new Date(`${day}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() - 1);
+  date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+/** Hora cheia (0–23) de um instante, no fuso informado. */
+export function hourOf(instant: Date, timeZone = DEFAULT_TIME_ZONE): number {
+  return Number(
+    new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", hourCycle: "h23" }).format(
+      instant,
+    ),
+  );
+}
+
+/** Data informada pelo cliente: sem futuro e até `MAX_BACKDATE_DAYS` dias atrás. */
+export function validateTakenAt(
+  takenAt: Date,
+  now: Date,
+  timeZone = DEFAULT_TIME_ZONE,
+): CheckinError | null {
+  if (takenAt.getTime() > now.getTime() + CLOCK_SKEW_MS) return "in_future";
+  const oldest = shiftDay(dayOf(now, timeZone), -MAX_BACKDATE_DAYS);
+  return dayOf(takenAt, timeZone) < oldest ? "too_old" : null;
 }
 
 /** `Hoje 12h50`, `Ontem 11h25` ou, para dias anteriores, `01/09 09h15`. */
@@ -98,7 +128,7 @@ export function formatWhen(
   const time = formatTime(instant, timeZone);
 
   if (day === today) return `Hoje ${time}`;
-  if (day === previousDay(today)) return `Ontem ${time}`;
+  if (day === shiftDay(today, -1)) return `Ontem ${time}`;
 
   const [, month, dayOfMonth] = day.split("-");
   return `${dayOfMonth}/${month} ${time}`;

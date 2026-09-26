@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { greetingCandidates, pickGreeting } from "./greeting";
+import { greetingCandidates, newCheckinTitles, pickGreeting } from "./greeting";
 
 const GENERIC_COUNT = 5;
 
@@ -58,5 +58,23 @@ describe("pickGreeting", () => {
     expect(pickGreeting(list, () => 0)).toBe("a");
     expect(pickGreeting(list, () => 0.5)).toBe("b");
     expect(pickGreeting(list, () => 0.999)).toBe("c");
+  });
+});
+
+describe("newCheckinTitles", () => {
+  it("manhã e madrugada: só as neutras", () => {
+    expect(newCheckinTitles(9)).toEqual(["Novo check in???", "Mais um???"]);
+    expect(newCheckinTitles(0)).toHaveLength(2);
+  });
+
+  it("tarde: 12h até 17h59", () => {
+    expect(newCheckinTitles(12)).toContain("Essa hora da tarde");
+    expect(newCheckinTitles(17)).toContain("Essa hora da tarde");
+    expect(newCheckinTitles(17)).not.toContain("Essa hora da noite?!");
+  });
+
+  it("noite: a partir das 18h", () => {
+    expect(newCheckinTitles(18)).toContain("Essa hora da noite?!");
+    expect(newCheckinTitles(23)).not.toContain("Essa hora da tarde");
   });
 });

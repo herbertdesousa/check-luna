@@ -1,8 +1,8 @@
 import "server-only";
-import { and, asc, count, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { checkinPictures, checkins } from "@/db/schema";
-import { CHECKIN_TYPES, dayOf, type CheckinStatus, type CheckinType } from "@/domain/checkin";
+import { CHECKIN_TYPES, MAX_BACKDATE_DAYS, dayOf, shiftDay, type CheckinStatus, type CheckinType } from "@/domain/checkin";
 
 export type FeedItem = {
   id: string;
@@ -96,4 +96,20 @@ export async function listPending(): Promise<PendingItem[]> {
     createdAt: r.createdAt,
     pictureIds: (byCheckin.get(r.id) ?? []).map((p) => p.id),
   }));
+}
+
+/**
+ * Tipos com vaga ocupada por dia (qualquer status, negado inclusive, pois o
+ * índice único bloqueia repetir), nos dias em que ainda se pode registrar.
+ */
+export async function listTakenByDay(userId: string): Promise<Record<string, CheckinType[]>> {
+  const since = shiftDay(dayOf(new Date()), -MAX_BACKDATE_DAYS);
+  const rows = await db
+    .select({ day: checkins.day, type: checkins.type })
+    .from(checkins)
+    .where(and(eq(checkins.userId, userId), gte(checkins.day, since)));
+
+  const byDay: Record<string, CheckinType[]> = {};
+  for (const { day, type } of rows) (byDay[day] ??= []).push(type);
+  return byDay;
 }

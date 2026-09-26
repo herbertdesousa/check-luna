@@ -4,6 +4,9 @@ import {
   dayOf,
   formatTime,
   formatWhen,
+  hourOf,
+  shiftDay,
+  validateTakenAt,
   validateNewCheckin,
   type Checkin,
   type CheckinStatus,
@@ -154,5 +157,43 @@ describe("formatWhen", () => {
   it("ontem atravessa a virada de mês", () => {
     const first = new Date("2026-10-01T15:00:00Z");
     expect(formatWhen(new Date("2026-09-30T15:00:00Z"), first)).toBe("Ontem 12h00");
+  });
+});
+
+describe("shiftDay", () => {
+  it("atravessa mês e ano", () => {
+    expect(shiftDay("2026-03-01", -1)).toBe("2026-02-28");
+    expect(shiftDay("2026-01-01", -1)).toBe("2025-12-31");
+    expect(shiftDay("2026-09-25", -7)).toBe("2026-09-18");
+  });
+});
+
+describe("hourOf", () => {
+  it("usa a hora local do fuso", () => {
+    expect(hourOf(new Date("2026-09-25T15:50:00Z"))).toBe(12);
+    expect(hourOf(new Date("2026-09-25T03:05:00Z"))).toBe(0);
+  });
+});
+
+describe("validateTakenAt", () => {
+  const now = new Date("2026-09-25T15:00:00Z"); // 25/09 12h00 em São Paulo
+
+  it("aceita agora e o passado recente", () => {
+    expect(validateTakenAt(now, now)).toBeNull();
+    expect(validateTakenAt(new Date("2026-09-24T02:00:00Z"), now)).toBeNull();
+  });
+
+  it("tolera pequeno adiantamento do relógio do cliente", () => {
+    expect(validateTakenAt(new Date("2026-09-25T15:04:00Z"), now)).toBeNull();
+  });
+
+  it("recusa o futuro", () => {
+    expect(validateTakenAt(new Date("2026-09-25T15:10:00Z"), now)).toBe("in_future");
+  });
+
+  it("aceita até 7 dias atrás (dia civil) e recusa além disso", () => {
+    // 18/09 00h00 em SP é o limite
+    expect(validateTakenAt(new Date("2026-09-18T03:00:00Z"), now)).toBeNull();
+    expect(validateTakenAt(new Date("2026-09-18T02:59:00Z"), now)).toBe("too_old");
   });
 });
