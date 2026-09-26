@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { checkinPictures, checkins } from "@/db/schema";
 import { CHECKIN_TYPES, dayOf, type CheckinStatus, type CheckinType } from "@/domain/checkin";
@@ -65,4 +65,35 @@ export async function countApprovedByType(
   const totals = Object.fromEntries(CHECKIN_TYPES.map((t) => [t, 0])) as Record<CheckinType, number>;
   for (const row of rows) totals[row.type] = row.total;
   return totals;
+}
+
+export type PendingItem = {
+  id: string;
+  userId: string;
+  type: CheckinType;
+  createdAt: Date;
+  pictureIds: string[];
+};
+
+/** Check-ins aguardando revisão, do mais antigo para o mais novo. */
+export async function listPending(): Promise<PendingItem[]> {
+  const rows = await db
+    .select()
+    .from(checkins)
+    .where(eq(checkins.status, "review"))
+    .orderBy(asc(checkins.createdAt));
+
+  const pictures = await db
+    .select({ id: checkinPictures.id, checkinId: checkinPictures.checkinId })
+    .from(checkinPictures)
+    .where(inArray(checkinPictures.checkinId, rows.map((r) => r.id)));
+  const byCheckin = Map.groupBy(pictures, (p) => p.checkinId);
+
+  return rows.map((r) => ({
+    id: r.id,
+    userId: r.userId,
+    type: r.type,
+    createdAt: r.createdAt,
+    pictureIds: (byCheckin.get(r.id) ?? []).map((p) => p.id),
+  }));
 }
