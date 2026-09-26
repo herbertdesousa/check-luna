@@ -65,7 +65,9 @@ function Form({ userId, title, takenByDay }: Props) {
   const canSave = !!selected && !!takenAt && photos.length > 0 && !saving;
 
   function addPhotos(files: FileList | null) {
-    if (files) setPhotos((prev) => [...prev, ...files].slice(0, MAX_PHOTOS));
+    // FileList é "vivo": limpar o input o esvazia. Copia antes, pois o updater do setState pode rodar depois.
+    const picked = files ? Array.from(files) : [];
+    setPhotos((prev) => [...prev, ...picked].slice(0, MAX_PHOTOS));
     if (fileInput.current) fileInput.current.value = ""; // permite reescolher o mesmo arquivo
   }
 
