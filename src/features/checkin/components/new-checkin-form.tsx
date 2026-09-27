@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MAX_BACKDATE_DAYS, dayOf, type CheckinType } from "@/domain/checkin";
+import { compressImage } from "../compress-image";
 import { TYPE_ICON } from "./type-icons";
 
 const MAX_PHOTOS = 20;
@@ -57,6 +58,7 @@ function Form({ userId, title, takenByDay }: Props) {
   const [photos, setPhotos] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [compressing, setCompressing] = useState(false);
 
   const takenAt = takenAtLocal ? new Date(takenAtLocal) : null;
   const takenToday = takenAt ? (takenByDay[dayOf(takenAt)] ?? []) : [];
@@ -64,13 +66,18 @@ function Form({ userId, title, takenByDay }: Props) {
   const available = TYPE_OPTIONS.filter((o) => !takenToday.includes(o.type));
   const selected =
     (type && available.some((o) => o.type === type) ? type : available[0]?.type) ?? null;
-  const canSave = !!selected && !!takenAt && photos.length > 0 && !saving;
+  const canSave = !!selected && !!takenAt && photos.length > 0 && !saving && !compressing;
 
-  function addPhotos(files: FileList | null) {
+  async function addPhotos(files: FileList | null) {
     // FileList é "vivo": limpar o input o esvazia. Copia antes, pois o updater do setState pode rodar depois.
     const picked = files ? Array.from(files) : [];
-    setPhotos((prev) => [...prev, ...picked].slice(0, MAX_PHOTOS));
     if (fileInput.current) fileInput.current.value = ""; // permite reescolher o mesmo arquivo
+    if (picked.length === 0) return;
+
+    setCompressing(true);
+    const compressed = await Promise.all(picked.map(compressImage));
+    setPhotos((prev) => [...prev, ...compressed].slice(0, MAX_PHOTOS));
+    setCompressing(false);
   }
 
   async function save() {
@@ -159,11 +166,11 @@ function Form({ userId, title, takenByDay }: Props) {
         type="button"
         variant="outline"
         size="lg"
-        disabled={photos.length >= MAX_PHOTOS}
+        disabled={photos.length >= MAX_PHOTOS || compressing}
         onClick={() => fileInput.current?.click()}
       >
         <IconPhotoPlus />
-        Adicionar fotinha
+        {compressing ? "Comprimindo..." : "Adicionar fotinha"}
       </Button>
 
       <div className="mt-auto flex flex-col gap-2">
