@@ -6,6 +6,7 @@ import {
   formatWhen,
   hourOf,
   shiftDay,
+  weekOf,
   validateTakenAt,
   validateNewCheckin,
   type Checkin,
@@ -195,5 +196,27 @@ describe("validateTakenAt", () => {
     // 18/09 00h00 em SP é o limite
     expect(validateTakenAt(new Date("2026-09-18T03:00:00Z"), now)).toBeNull();
     expect(validateTakenAt(new Date("2026-09-18T02:59:00Z"), now)).toBe("too_old");
+  });
+});
+
+describe("weekOf", () => {
+  it("quinta 2026-09-24: semana de segunda 21 a domingo 27", () => {
+    expect(weekOf("2026-09-24")).toEqual([
+      "2026-09-21", "2026-09-22", "2026-09-23", "2026-09-24",
+      "2026-09-25", "2026-09-26", "2026-09-27",
+    ]);
+  });
+
+  it("segunda e domingo pertencem à mesma semana", () => {
+    expect(weekOf("2026-09-21")).toEqual(weekOf("2026-09-27"));
+    expect(weekOf("2026-09-21")[0]).toBe("2026-09-21");
+    expect(weekOf("2026-09-27")[6]).toBe("2026-09-27");
+  });
+
+  it("atravessa a virada de mês", () => {
+    expect(weekOf("2026-09-30")).toEqual([
+      "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01",
+      "2026-10-02", "2026-10-03", "2026-10-04",
+    ]);
   });
 });

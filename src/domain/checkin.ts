@@ -97,6 +97,13 @@ export function shiftDay(day: Day, days: number): Day {
   return date.toISOString().slice(0, 10);
 }
 
+/** Os 7 dias (seg a dom) da semana que contém `day`. */
+export function weekOf(day: Day): Day[] {
+  const sinceMonday = (new Date(`${day}T00:00:00Z`).getUTCDay() + 6) % 7;
+  const monday = shiftDay(day, -sinceMonday);
+  return Array.from({ length: 7 }, (_, i) => shiftDay(monday, i));
+}
+
 /** Hora cheia (0–23) de um instante, no fuso informado. */
 export function hourOf(instant: Date, timeZone = DEFAULT_TIME_ZONE): number {
   return Number(

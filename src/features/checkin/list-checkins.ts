@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, gte, inArray, ne } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lte, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { checkinPictures, checkins } from "@/db/schema";
 import { CHECKIN_TYPES, MAX_BACKDATE_DAYS, dayOf, shiftDay, type CheckinStatus, type CheckinType } from "@/domain/checkin";
@@ -37,20 +37,6 @@ export async function listFeed(): Promise<FeedItem[]> {
   });
 }
 
-/** Tipos que o usuário já postou hoje (check-in negado não conta). */
-export async function listTypesDoneToday(userId: string): Promise<CheckinType[]> {
-  const rows = await db
-    .select({ type: checkins.type })
-    .from(checkins)
-    .where(
-      and(
-        eq(checkins.userId, userId),
-        eq(checkins.day, dayOf(new Date())),
-        ne(checkins.status, "denied"),
-      ),
-    );
-  return rows.map((r) => r.type);
-}
 
 /** Total de check-ins aprovados do usuário por tipo (zero quando não há). */
 export async function countApprovedByType(
@@ -108,6 +94,29 @@ export async function listTakenByDay(userId: string): Promise<Record<string, Che
     .select({ day: checkins.day, type: checkins.type })
     .from(checkins)
     .where(and(eq(checkins.userId, userId), gte(checkins.day, since)));
+
+  const byDay: Record<string, CheckinType[]> = {};
+  for (const { day, type } of rows) (byDay[day] ??= []).push(type);
+  return byDay;
+}
+
+/** Tipos postados por dia no intervalo (negado não conta). */
+export async function listTypesByDay(
+  userId: string,
+  from: string,
+  to: string,
+): Promise<Record<string, CheckinType[]>> {
+  const rows = await db
+    .select({ day: checkins.day, type: checkins.type })
+    .from(checkins)
+    .where(
+      and(
+        eq(checkins.userId, userId),
+        gte(checkins.day, from),
+        lte(checkins.day, to),
+        ne(checkins.status, "denied"),
+      ),
+    );
 
   const byDay: Record<string, CheckinType[]> = {};
   for (const { day, type } of rows) (byDay[day] ??= []).push(type);

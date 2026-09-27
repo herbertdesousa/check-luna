@@ -60,8 +60,10 @@ function Form({ userId, title, takenByDay }: Props) {
 
   const takenAt = takenAtLocal ? new Date(takenAtLocal) : null;
   const takenToday = takenAt ? (takenByDay[dayOf(takenAt)] ?? []) : [];
-  // tipo escolhido que ficou indisponível ao trocar a data deixa de valer
-  const selected = type && !takenToday.includes(type) ? type : null;
+  // sem escolha (ou escolha que ficou indisponível ao trocar a data): o primeiro tipo livre
+  const available = TYPE_OPTIONS.filter((o) => !takenToday.includes(o.type));
+  const selected =
+    (type && available.some((o) => o.type === type) ? type : available[0]?.type) ?? null;
   const canSave = !!selected && !!takenAt && photos.length > 0 && !saving;
 
   function addPhotos(files: FileList | null) {
@@ -102,9 +104,10 @@ function Form({ userId, title, takenByDay }: Props) {
 
       <ToggleGroup
         variant="outline"
-        className="mx-auto"
+        className="w-full justify-between"
         value={selected ? [selected] : []}
-        onValueChange={(value) => setType((value[0] as CheckinType | undefined) ?? null)}
+        // comportamento de radio: clicar no já selecionado não desmarca
+        onValueChange={(value) => value[0] && setType(value[0] as CheckinType)}
       >
         {TYPE_OPTIONS.map(({ type: option, label }) => {
           const Icon = TYPE_ICON[option]!;
@@ -114,7 +117,7 @@ function Form({ userId, title, takenByDay }: Props) {
               value={option}
               disabled={takenToday.includes(option)}
               aria-label={label}
-              className="h-auto flex-col gap-1 px-3 py-2"
+              className="size-18 flex-col gap-1 p-0 aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary/90"
             >
               <Icon size={24} />
               <span className="text-xs">{label}</span>
