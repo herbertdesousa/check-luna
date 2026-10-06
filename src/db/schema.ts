@@ -1,4 +1,4 @@
-import { date, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { date, integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { CHECKIN_STATUSES, CHECKIN_TYPES } from "../domain/checkin";
 
 export const checkinType = pgEnum("checkin_type", CHECKIN_TYPES);
@@ -24,3 +24,34 @@ export const checkinPictures = pgTable("tb_checkin_pictures", {
     .references(() => checkins.id, { onDelete: "cascade" }),
   photoUrl: text().notNull(),
 });
+
+export const prizes = pgTable("tb_prizes", {
+  id: uuid().primaryKey().defaultRandom(),
+  name: text().notNull(),
+  photoUrl: text().notNull(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+export const prizeRequirements = pgTable("tb_prize_requirements", {
+  id: uuid().primaryKey().defaultRandom(),
+  prizeId: uuid()
+    .notNull()
+    .references(() => prizes.id, { onDelete: "cascade" }),
+  type: checkinType().notNull(),
+  quantity: integer().notNull(),
+});
+
+export const purchases = pgTable(
+  "tb_purchases",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: text().notNull(),
+    // sem onDelete: exclusão de prêmio já comprado é bloqueada pelo banco
+    prizeId: uuid()
+      .notNull()
+      .references(() => prizes.id),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  // um usuário não compra o mesmo prêmio duas vezes
+  (t) => [uniqueIndex("purchases_user_prize_uq").on(t.userId, t.prizeId)],
+);

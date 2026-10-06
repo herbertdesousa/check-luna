@@ -11,7 +11,7 @@ export default async function AdminPage() {
   const now = new Date();
 
   return (
-    <main className="mx-auto w-full max-w-xl px-6 py-8">
+    <>
       <h1 className="mb-4 text-lg font-bold">Check-ins pendentes ({pending.length})</h1>
       {pending.length === 0 && <p className="text-sm opacity-60">Nada para revisar.</p>}
       <ul className="flex flex-col gap-4">
@@ -44,6 +44,6 @@ export default async function AdminPage() {
           </li>
         ))}
       </ul>
-    </main>
+    </>
   );
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { dayOf, weekOf } from "@/domain/checkin";
 import { greetingCandidates, pickGreeting } from "@/domain/greeting";
+import { balanceByType } from "@/domain/prize";
 import { CheckinCounts } from "@/features/checkin/components/checkin-counts";
 import { CheckinFeed } from "@/features/checkin/components/checkin-feed";
 import { WeekStrip } from "@/features/checkin/components/week-strip";
@@ -12,6 +13,7 @@ import {
   listFeed,
   listTypesByDay,
 } from "@/features/checkin/list-checkins";
+import { spentByType } from "@/features/prize/list-prizes";
 
 export default async function FeedPage() {
   await connection(); // depende do banco e da hora: nunca pré-renderizar no build
@@ -19,11 +21,13 @@ export default async function FeedPage() {
   const today = dayOf(now);
   const week = weekOf(today);
 
-  const [items, typesByDay, totals] = await Promise.all([
+  const [items, typesByDay, approved, spent] = await Promise.all([
     listFeed(),
     listTypesByDay(CURRENT_USER_ID, week[0], week[6]),
     countApprovedByType(CURRENT_USER_ID),
+    spentByType(CURRENT_USER_ID),
   ]);
+  const totals = balanceByType(approved, spent);
 
   return (
     <>

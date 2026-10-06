@@ -2,22 +2,6 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { CHECKIN_TYPES } from "@/domain/checkin";
 import { createCheckin } from "@/features/checkin/create-checkin";
-import { CURRENT_USER_ID } from "@/features/checkin/current-user";
-import { listLedger } from "@/features/checkin/list-checkins";
-
-export async function GET(request: Request) {
-  const cursorParam = new URL(request.url).searchParams.get("cursor");
-  const cursor = cursorParam ? new Date(cursorParam) : undefined;
-  if (cursor && Number.isNaN(cursor.getTime())) {
-    return NextResponse.json({ error: "invalid_cursor" }, { status: 400 });
-  }
-
-  const { items, nextCursor } = await listLedger(CURRENT_USER_ID, cursor);
-  return NextResponse.json({
-    items,
-    nextCursor: nextCursor ? nextCursor.toISOString() : null,
-  });
-}
 
 // Funções da Vercel aceitam body de até 4.5MB (total, somando todas as fotos)
 const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
