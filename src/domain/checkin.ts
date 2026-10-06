@@ -124,6 +124,15 @@ export function validateTakenAt(
   return dayOf(takenAt, timeZone) < oldest ? "too_old" : null;
 }
 
+/** `Hoje`, `Ontem` ou, para dias anteriores, `01/09`. */
+export function formatDayLabel(day: Day, today: Day): string {
+  if (day === today) return "Hoje";
+  if (day === shiftDay(today, -1)) return "Ontem";
+
+  const [, month, dayOfMonth] = day.split("-");
+  return `${dayOfMonth}/${month}`;
+}
+
 /** `Hoje 12h50`, `Ontem 11h25` ou, para dias anteriores, `01/09 09h15`. */
 export function formatWhen(
   instant: Date,
@@ -132,11 +141,5 @@ export function formatWhen(
 ): string {
   const day = dayOf(instant, timeZone);
   const today = dayOf(now, timeZone);
-  const time = formatTime(instant, timeZone);
-
-  if (day === today) return `Hoje ${time}`;
-  if (day === shiftDay(today, -1)) return `Ontem ${time}`;
-
-  const [, month, dayOfMonth] = day.split("-");
-  return `${dayOfMonth}/${month} ${time}`;
+  return `${formatDayLabel(day, today)} ${formatTime(instant, timeZone)}`;
 }

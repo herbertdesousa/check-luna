@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, gte, inArray, lte, ne } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lt, lte, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { checkinPictures, checkins } from "@/db/schema";
 import { CHECKIN_TYPES, MAX_BACKDATE_DAYS, dayOf, shiftDay, type CheckinStatus, type CheckinType } from "@/domain/checkin";
@@ -98,6 +98,43 @@ export async function listTakenByDay(userId: string): Promise<Record<string, Che
   const byDay: Record<string, CheckinType[]> = {};
   for (const { day, type } of rows) (byDay[day] ??= []).push(type);
   return byDay;
+}
+
+export type LedgerItem = {
+  id: string;
+  type: CheckinType;
+  status: CheckinStatus;
+  day: string;
+  createdAt: Date;
+};
+
+const LEDGER_PAGE_SIZE = 20;
+
+/** Check-ins do usuário, do mais recente ao mais antigo, paginado por cursor (createdAt do último item recebido). */
+export async function listLedger(
+  userId: string,
+  cursor?: Date,
+): Promise<{ items: LedgerItem[]; nextCursor: Date | null }> {
+  const rows = await db
+    .select({
+      id: checkins.id,
+      type: checkins.type,
+      status: checkins.status,
+      day: checkins.day,
+      createdAt: checkins.createdAt,
+    })
+    .from(checkins)
+    .where(
+      cursor
+        ? and(eq(checkins.userId, userId), lt(checkins.createdAt, cursor))
+        : eq(checkins.userId, userId),
+    )
+    .orderBy(desc(checkins.createdAt))
+    .limit(LEDGER_PAGE_SIZE + 1);
+
+  const hasMore = rows.length > LEDGER_PAGE_SIZE;
+  const items = rows.slice(0, LEDGER_PAGE_SIZE);
+  return { items, nextCursor: hasMore ? items[items.length - 1].createdAt : null };
 }
 
 /** Tipos postados por dia no intervalo (negado não conta). */
